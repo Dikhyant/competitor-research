@@ -34,7 +34,7 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 SECRET_KEY = env('SECRET_KEY', default="django-insecure-5!py#86zj4j2o3yc1e$stf-wd5_dlalqu9s4ar2cgs68p-6&b0")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env.bool('DEBUG', default=False)
+DEBUG = env.bool('DEBUG', default=True)  # Default to True for development
 
 # Handle ALLOWED_HOSTS - support both comma-separated string and list
 ALLOWED_HOSTS = []
@@ -48,12 +48,12 @@ if allowed_hosts_env:
     else:
         ALLOWED_HOSTS = [str(allowed_hosts_env)]
 
-# Add default hosts for development
-if DEBUG:
-    if 'localhost' not in ALLOWED_HOSTS:
-        ALLOWED_HOSTS.append('localhost')
-    if '127.0.0.1' not in ALLOWED_HOSTS:
-        ALLOWED_HOSTS.append('127.0.0.1')
+# Add default hosts for development (always add, not just when DEBUG=True)
+# This ensures local development works regardless of DEBUG setting
+if 'localhost' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('localhost')
+if '127.0.0.1' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('127.0.0.1')
 
 # Always add .onrender.com for Render deployments (wildcard matches all Render subdomains)
 if '.onrender.com' not in ALLOWED_HOSTS:

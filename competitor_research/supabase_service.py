@@ -70,6 +70,42 @@ class SupabaseService:
             logger.error(f"Error fetching company {company_id}: {str(e)}")
             raise
     
+    def get_company_by_url(self, website_url):
+        """
+        Get a company by website URL.
+        
+        Args:
+            website_url: Website URL of the company
+        
+        Returns:
+            Company record or None
+        """
+        try:
+            response = self.client.table('companies').select('*').eq('website_url', website_url).limit(1).execute()
+            return response.data[0] if response.data else None
+        except Exception as e:
+            logger.error(f"Error fetching company by URL {website_url}: {str(e)}")
+            raise
+    
+    def get_competitors_by_ids(self, competitor_ids):
+        """
+        Get competitors by their IDs.
+        
+        Args:
+            competitor_ids: List of competitor company IDs
+        
+        Returns:
+            List of competitor company records
+        """
+        try:
+            if not competitor_ids:
+                return []
+            response = self.client.table('companies').select('*').in_('id', competitor_ids).execute()
+            return response.data if response.data else []
+        except Exception as e:
+            logger.error(f"Error fetching competitors by IDs: {str(e)}")
+            raise
+    
     def create_company(self, name, website_url=None):
         """
         Create a new company.
@@ -98,7 +134,7 @@ class SupabaseService:
         
         Args:
             company_id: UUID of the company
-            **kwargs: Fields to update (name, website_url, etc.)
+            **kwargs: Fields to update (name, website_url, competitor_ids, etc.)
         
         Returns:
             Updated company record
@@ -108,6 +144,24 @@ class SupabaseService:
             return response.data[0] if response.data else None
         except Exception as e:
             logger.error(f"Error updating company {company_id}: {str(e)}")
+            raise
+    
+    def update_company_competitor_ids(self, company_id, competitor_ids):
+        """
+        Update a company's competitor_ids field.
+        
+        Args:
+            company_id: UUID of the company
+            competitor_ids: List of competitor company IDs
+        
+        Returns:
+            Updated company record
+        """
+        try:
+            response = self.client.table('companies').update({'competitor_ids': competitor_ids}).eq('id', company_id).execute()
+            return response.data[0] if response.data else None
+        except Exception as e:
+            logger.error(f"Error updating competitor_ids for company {company_id}: {str(e)}")
             raise
     
     def delete_company(self, company_id):

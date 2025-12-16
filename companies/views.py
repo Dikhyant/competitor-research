@@ -66,16 +66,22 @@ def find_competitors(request):
         )
 
 
-def stream_competitors_research(company_url):
+def find_and_save_competitors(company_url, main_company_id, supabase_service, openai_service):
     """
-    Generator function that yields SSE events as competitors are found and researched.
+    Helper function to find competitors using OpenAI and save them to the database.
+    Also saves/updates the main company and sets its competitor_ids.
+    
+    Args:
+        company_url: URL of the main company
+        main_company_id: ID of the main company if it exists, None otherwise
+        supabase_service: SupabaseService instance
+        openai_service: OpenAIService instance
+    
+    Yields:
+        SSE events for competitors found and saved
     """
-    try:
-        # Send initial status
-        yield f"data: {json.dumps({'type': 'status', 'message': 'Finding competitors...'})}\n\n"
-        
-        # Build the prompt
-        prompt = """You are a business analyst with 20 years of experience. You can take any company's website url, and do research about it and figure out who their competitors are.
+    # Build the prompt to find competitors
+    prompt = """You are a business analyst with 20 years of experience. You can take any company's website url, and do research about it and figure out who their competitors are.
 
 IMPORTANT: You must respond with ONLY a valid JSON array. Do not include any explanatory text, markdown formatting, or code blocks. Return only the raw JSON array.
 
@@ -89,112 +95,202 @@ Company URL: """ + company_url + """
 
 Remember: Output ONLY the JSON array, nothing else."""
 
-        # Call OpenAI service
-        openai_service = get_openai_service()
-        response_text = openai_service.get_text_completion(
-            prompt,
-            model="gpt-4",  # Using GPT-4 for better analysis
-            temperature=0.7
-        )
+    # Call OpenAI service
+    response_text = openai_service.get_text_completion(
+        prompt,
+        model="gpt-4",  # Using GPT-4 for better analysis
+        temperature=0.7
+    )
+    
+    # Parse the response to extract JSON array
+    competitors = parse_competitors_response(response_text)
+    
+    # Send competitors list event
+    yield f"data: {json.dumps({'type': 'competitors_list', 'total': len(competitors)})}\n\n"
+    
+    # Ensure main company exists in database
+    if not main_company_id:
+        # Try to find by URL first
+        existing_main = supabase_service.get_company_by_url(company_url)
+        if existing_main:
+            main_company_id = existing_main['id']
+        else:
+            # Create main company (extract name from URL or use URL as name)
+            import re
+            from urllib.parse import urlparse
+            parsed_url = urlparse(company_url)
+            domain = parsed_url.netloc.replace('www.', '')
+            company_name = domain.split('.')[0].capitalize() if domain else company_url
+            
+            new_main_company = supabase_service.create_company(
+                name=company_name,
+                website_url=company_url
+            )
+            if new_main_company:
+                main_company_id = new_main_company['id']
+                logger.info(f"Created main company: {company_name}")
+            else:
+                logger.error("Failed to create main company")
+                main_company_id = None
+    
+    # Save competitors to Supabase database
+    saved_competitors = []
+    competitor_ids = []
+    
+    for competitor in competitors:
+        try:
+            competitor_name = competitor.get("name", "").strip()
+            competitor_url = competitor.get("url", "").strip()
+            
+            if not competitor_name:
+                logger.warning(f"Skipping competitor with missing name: {competitor}")
+                continue
+            
+            # Check if company already exists by URL (if available) or by name
+            existing_company = None
+            
+            if competitor_url:
+                # Try to find by URL first (most reliable)
+                try:
+                    existing_company = supabase_service.get_company_by_url(competitor_url)
+                except Exception as e:
+                    logger.warning(f"Error checking for existing company by URL: {str(e)}")
+            
+            # If not found by URL, try to find by name
+            if not existing_company:
+                try:
+                    response = supabase_service.client.table('companies').select('*').eq('name', competitor_name).limit(1).execute()
+                    if response.data:
+                        existing_company = response.data[0]
+                except Exception as e:
+                    logger.warning(f"Error checking for existing company by name: {str(e)}")
+            
+            if existing_company:
+                # Company exists, update if needed
+                company_id = existing_company['id']
+                update_data = {}
+                
+                if existing_company.get('name') != competitor_name:
+                    update_data['name'] = competitor_name
+                
+                if competitor_url and existing_company.get('website_url') != competitor_url:
+                    update_data['website_url'] = competitor_url
+                
+                if update_data:
+                    try:
+                        updated = supabase_service.update_company(company_id, **update_data)
+                        existing_company = updated if updated else existing_company
+                    except Exception as e:
+                        logger.warning(f"Error updating company: {str(e)}")
+                
+                saved_competitor = {
+                    "id": existing_company['id'],
+                    "name": existing_company.get('name', competitor_name),
+                    "url": existing_company.get('website_url', competitor_url) or "",
+                    "created": False  # Existing record
+                }
+                saved_competitors.append(saved_competitor)
+                competitor_ids.append(company_id)
+                logger.info(f"Found existing company: {existing_company.get('name', competitor_name)}")
+            else:
+                # Create new company
+                new_company = supabase_service.create_company(
+                    name=competitor_name,
+                    website_url=competitor_url if competitor_url else None
+                )
+                
+                if new_company:
+                    saved_competitor = {
+                        "id": new_company['id'],
+                        "name": new_company.get('name', competitor_name),
+                        "url": new_company.get('website_url', competitor_url) or "",
+                        "created": True  # New record
+                    }
+                    saved_competitors.append(saved_competitor)
+                    competitor_ids.append(new_company['id'])
+                    logger.info(f"Created new company: {competitor_name}")
+                else:
+                    raise Exception("Failed to create company - no data returned")
+            
+            # Send individual competitor event
+            yield f"data: {json.dumps({'type': 'competitor', 'competitor': saved_competitor})}\n\n"
+                    
+        except Exception as e:
+            logger.error(f"Error saving competitor {competitor.get('name')}: {str(e)}")
+            # Still include in response even if save failed
+            error_competitor = {
+                "name": competitor.get("name", ""),
+                "url": competitor.get("url", ""),
+                "error": f"Failed to save: {str(e)}"
+            }
+            saved_competitors.append(error_competitor)
+            yield f"data: {json.dumps({'type': 'competitor', 'competitor': error_competitor})}\n\n"
+    
+    # Update main company's competitor_ids
+    if main_company_id and competitor_ids:
+        try:
+            supabase_service.update_company_competitor_ids(main_company_id, competitor_ids)
+            logger.info(f"Updated competitor_ids for main company: {len(competitor_ids)} competitors")
+        except Exception as e:
+            logger.error(f"Error updating competitor_ids for main company: {str(e)}")
+    
+    return saved_competitors
+
+
+def stream_competitors_research(company_url):
+    """
+    Generator function that yields SSE events as competitors are found and researched.
+    """
+    try:
+        # Send initial status
+        yield f"data: {json.dumps({'type': 'status', 'message': 'Checking database for existing company...'})}\n\n"
         
-        # Parse the response to extract JSON array
-        competitors = parse_competitors_response(response_text)
-        
-        # Send competitors list event
-        yield f"data: {json.dumps({'type': 'competitors_list', 'total': len(competitors)})}\n\n"
-        
-        # Save competitors to Supabase database
+        # Initialize services
         supabase_service = get_supabase_service()
+        openai_service = get_openai_service()
+        
+        # Check if company exists in database by URL
+        existing_company = supabase_service.get_company_by_url(company_url)
         saved_competitors = []
         
-        for competitor in competitors:
-            try:
-                competitor_name = competitor.get("name", "").strip()
-                competitor_url = competitor.get("url", "").strip()
+        if existing_company:
+            # Company exists, check for competitors
+            competitor_ids = existing_company.get('competitor_ids', [])
+            
+            if competitor_ids and len(competitor_ids) > 0:
+                # Competitors exist, fetch them from database
+                yield f"data: {json.dumps({'type': 'status', 'message': f'Found existing company with {len(competitor_ids)} competitors in database...'})}\n\n"
                 
-                if not competitor_name:
-                    logger.warning(f"Skipping competitor with missing name: {competitor}")
-                    continue
+                competitors_list = supabase_service.get_competitors_by_ids(competitor_ids)
                 
-                # Check if company already exists by URL (if available) or by name
-                existing_company = None
-                
-                if competitor_url:
-                    # Try to find by URL first (most reliable)
-                    try:
-                        response = supabase_service.client.table('companies').select('*').eq('website_url', competitor_url).limit(1).execute()
-                        if response.data:
-                            existing_company = response.data[0]
-                    except Exception as e:
-                        logger.warning(f"Error checking for existing company by URL: {str(e)}")
-                
-                # If not found by URL and no URL provided, try to find by name
-                if not existing_company:
-                    try:
-                        response = supabase_service.client.table('companies').select('*').eq('name', competitor_name).limit(1).execute()
-                        if response.data:
-                            existing_company = response.data[0]
-                    except Exception as e:
-                        logger.warning(f"Error checking for existing company by name: {str(e)}")
-                
-                if existing_company:
-                    # Company exists, update if needed
-                    company_id = existing_company['id']
-                    update_data = {}
-                    
-                    if existing_company.get('name') != competitor_name:
-                        update_data['name'] = competitor_name
-                    
-                    if competitor_url and existing_company.get('website_url') != competitor_url:
-                        update_data['website_url'] = competitor_url
-                    
-                    if update_data:
-                        try:
-                            updated = supabase_service.update_company(company_id, **update_data)
-                            existing_company = updated if updated else existing_company
-                        except Exception as e:
-                            logger.warning(f"Error updating company: {str(e)}")
-                    
+                # Convert to the format expected by the rest of the code
+                for comp in competitors_list:
                     saved_competitor = {
-                        "id": existing_company['id'],
-                        "name": existing_company.get('name', competitor_name),
-                        "url": existing_company.get('website_url', competitor_url) or "",
+                        "id": comp['id'],
+                        "name": comp.get('name', ''),
+                        "url": comp.get('website_url', '') or "",
                         "created": False  # Existing record
                     }
                     saved_competitors.append(saved_competitor)
-                    logger.info(f"Found existing company: {existing_company.get('name', competitor_name)}")
-                else:
-                    # Create new company
-                    new_company = supabase_service.create_company(
-                        name=competitor_name,
-                        website_url=competitor_url if competitor_url else None
-                    )
-                    
-                    if new_company:
-                        saved_competitor = {
-                            "id": new_company['id'],
-                            "name": new_company.get('name', competitor_name),
-                            "url": new_company.get('website_url', competitor_url) or "",
-                            "created": True  # New record
-                        }
-                        saved_competitors.append(saved_competitor)
-                        logger.info(f"Created new company: {competitor_name}")
-                    else:
-                        raise Exception("Failed to create company - no data returned")
                 
-                # Send individual competitor event
-                yield f"data: {json.dumps({'type': 'competitor', 'competitor': saved_competitor})}\n\n"
-                        
-            except Exception as e:
-                logger.error(f"Error saving competitor {competitor.get('name')}: {str(e)}")
-                # Still include in response even if save failed
-                error_competitor = {
-                    "name": competitor.get("name", ""),
-                    "url": competitor.get("url", ""),
-                    "error": f"Failed to save: {str(e)}"
-                }
-                saved_competitors.append(error_competitor)
-                yield f"data: {json.dumps({'type': 'competitor', 'competitor': error_competitor})}\n\n"
+                # Send competitors list event
+                yield f"data: {json.dumps({'type': 'competitors_list', 'total': len(saved_competitors)})}\n\n"
+                
+                # Send individual competitor events
+                for saved_competitor in saved_competitors:
+                    yield f"data: {json.dumps({'type': 'competitor', 'competitor': saved_competitor})}\n\n"
+            else:
+                # Company exists but no competitors, need to find them
+                yield f"data: {json.dumps({'type': 'status', 'message': 'Company found but no competitors. Finding competitors...'})}\n\n"
+                saved_competitors = yield from find_and_save_competitors(
+                    company_url, existing_company['id'], supabase_service, openai_service
+                )
+        else:
+            # Company doesn't exist, need to find competitors
+            yield f"data: {json.dumps({'type': 'status', 'message': 'Company not found. Finding competitors...'})}\n\n"
+            saved_competitors = yield from find_and_save_competitors(
+                company_url, None, supabase_service, openai_service
+            )
         
         # Send status that we're starting research
         yield f"data: {json.dumps({'type': 'status', 'message': 'Starting competitor research...', 'total_competitors': len(saved_competitors)})}\n\n"
@@ -316,7 +412,7 @@ Remember: Output ONLY the JSON object, nothing else."""
                 yield f"data: {json.dumps({'type': 'competitor_research', 'result': research_result})}\n\n"
         
         # Send completion event
-        yield f"data: {json.dumps({'type': 'complete', 'company_url': company_url, 'total_found': len(competitors), 'total_saved': len([c for c in saved_competitors if 'error' not in c]), 'research_results': research_results})}\n\n"
+        yield f"data: {json.dumps({'type': 'complete', 'company_url': company_url, 'total_found': len(saved_competitors), 'total_saved': len([c for c in saved_competitors if 'error' not in c]), 'research_results': research_results})}\n\n"
         
     except Exception as e:
         logger.error(f"Error in stream_competitors_research: {str(e)}", exc_info=True)

@@ -149,19 +149,25 @@ class SupabaseService:
     def update_company_competitor_ids(self, company_id, competitor_ids):
         """
         Update a company's competitor_ids field.
+        Note: This will fail silently if the competitor_ids column doesn't exist in the database.
         
         Args:
             company_id: UUID of the company
             competitor_ids: List of competitor company IDs
         
         Returns:
-            Updated company record
+            Updated company record or None if column doesn't exist
         """
         try:
             response = self.client.table('companies').update({'competitor_ids': competitor_ids}).eq('id', company_id).execute()
             return response.data[0] if response.data else None
         except Exception as e:
-            logger.error(f"Error updating competitor_ids for company {company_id}: {str(e)}")
+            error_msg = str(e)
+            # Check if error is about missing column
+            if 'competitor_ids' in error_msg and ('schema cache' in error_msg or 'PGRST204' in error_msg):
+                logger.warning(f"competitor_ids column not found in companies table. Skipping update for company {company_id}")
+                return None
+            logger.error(f"Error updating competitor_ids for company {company_id}: {error_msg}")
             raise
     
     def delete_company(self, company_id):
@@ -253,7 +259,8 @@ class SupabaseService:
     
     def create_company_networth(self, company_id, value_usd, year, source_url):
         """
-        Create a company networth record.
+        Create or update a company networth record.
+        Handles duplicate key constraints by updating existing records.
         
         Args:
             company_id: UUID of the company
@@ -262,7 +269,7 @@ class SupabaseService:
             source_url: Source URL for the networth information
         
         Returns:
-            Created networth record
+            Created or updated networth record
         """
         try:
             data = {
@@ -271,11 +278,40 @@ class SupabaseService:
                 'year': year,
                 'source_url': source_url
             }
+            # Try to insert first
             response = self.client.table('company_networth').insert(data).execute()
             return response.data[0] if response.data else None
         except Exception as e:
-            logger.error(f"Error creating company networth: {str(e)}")
-            raise
+            # Check if this is a duplicate key error (PostgreSQL error code 23505)
+            error_str = str(e)
+            error_code = None
+            
+            # Try to extract error code from exception
+            if hasattr(e, 'message') and isinstance(e.message, dict):
+                error_code = e.message.get('code')
+            elif hasattr(e, 'code'):
+                error_code = e.code
+            elif isinstance(e, dict):
+                error_code = e.get('code')
+            
+            # Check if error code is 23505 or if error string contains 23505
+            is_duplicate = (error_code == '23505' or '23505' in error_str or 
+                          'duplicate key' in error_str.lower())
+            
+            if is_duplicate:
+                try:
+                    # Update existing record instead
+                    response = self.client.table('company_networth').update({
+                        'value_usd': float(value_usd),
+                        'source_url': source_url
+                    }).eq('company_id', company_id).eq('year', year).execute()
+                    return response.data[0] if response.data else None
+                except Exception as update_error:
+                    logger.error(f"Error updating company networth: {str(update_error)}")
+                    raise
+            else:
+                logger.error(f"Error creating company networth: {str(e)}")
+                raise
     
     # Company Users methods
     def get_company_users(self, company_id=None, limit=100):
@@ -301,7 +337,8 @@ class SupabaseService:
     
     def create_company_users(self, company_id, value, year, source_url):
         """
-        Create a company user count record.
+        Create or update a company user count record.
+        Handles duplicate key constraints by updating existing records.
         
         Args:
             company_id: UUID of the company
@@ -310,7 +347,7 @@ class SupabaseService:
             source_url: Source URL for the user count information
         
         Returns:
-            Created user count record
+            Created or updated user count record
         """
         try:
             data = {
@@ -319,11 +356,40 @@ class SupabaseService:
                 'year': year,
                 'source_url': source_url
             }
+            # Try to insert first
             response = self.client.table('company_users').insert(data).execute()
             return response.data[0] if response.data else None
         except Exception as e:
-            logger.error(f"Error creating company users: {str(e)}")
-            raise
+            # Check if this is a duplicate key error (PostgreSQL error code 23505)
+            error_str = str(e)
+            error_code = None
+            
+            # Try to extract error code from exception
+            if hasattr(e, 'message') and isinstance(e.message, dict):
+                error_code = e.message.get('code')
+            elif hasattr(e, 'code'):
+                error_code = e.code
+            elif isinstance(e, dict):
+                error_code = e.get('code')
+            
+            # Check if error code is 23505 or if error string contains 23505
+            is_duplicate = (error_code == '23505' or '23505' in error_str or 
+                          'duplicate key' in error_str.lower())
+            
+            if is_duplicate:
+                try:
+                    # Update existing record instead
+                    response = self.client.table('company_users').update({
+                        'value': int(value),
+                        'source_url': source_url
+                    }).eq('company_id', company_id).eq('year', year).execute()
+                    return response.data[0] if response.data else None
+                except Exception as update_error:
+                    logger.error(f"Error updating company users: {str(update_error)}")
+                    raise
+            else:
+                logger.error(f"Error creating company users: {str(e)}")
+                raise
 
 
 # Convenience function to get a service instance

@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Competitor Research - Find Your Competitors</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 1200px;
+            width: 100%;
+            padding: 40px;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+
+        .form-group {
+            margin-bottom: 30px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        input[type="url"] {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        input[type="url"]:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results {
+            display: none;
+            margin-top: 40px;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .results.active {
+            display: block;
+        }
+
+        .results-header {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .results-header h2 {
+            color: #333;
+            font-size: 1.8em;
+            margin-bottom: 10px;
+        }
+
+        .results-stats {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .stat-label {
+            font-size: 0.85em;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: 700;
+        }
+
+        .competitors-list {
+            margin-top: 30px;
+        }
+
+        .competitor-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .competitor-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .competitor-name {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .competitor-url {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 0.95em;
+        }
+
+        .competitor-url:hover {
+            text-decoration: underline;
+        }
+
+        .error {
+            display: none;
+            background: #fee;
+            color: #c33;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border-left: 4px solid #c33;
+        }
+
+        .error.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .success-badge {
+            display: inline-block;
+            background: #4caf50;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+
+        .research-status {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .research-status.success {
+            color: #4caf50;
+        }
+
+        .research-status.error {
+            color: #c33;
+        }
+
+        .loading-status {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #667eea;
+            font-weight: 500;
+        }
+
+        .competitor-item.analyzing {
+            opacity: 0.7;
+            border-left-color: #ffa500;
+        }
+
+        .competitor-item.analyzing::after {
+            content: " (Analyzing...)";
+            color: #ffa500;
+            font-size: 0.9em;
+            font-weight: normal;
+        }
+
+        .completion-message {
+            background: #4caf50;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+            font-weight: 600;
+            display: none;
+        }
+
+        .completion-message.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .graphs-section {
+            margin-top: 40px;
+            display: none;
+        }
+
+        .graphs-section.active {
+            display: block;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .graphs-header {
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .graphs-header h2 {
+            color: #333;
+            font-size: 1.8em;
+            margin-bottom: 10px;
+        }
+
+        .graph-container {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .graph-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .graph-title::before {
+            content: "📊";
+            font-size: 1.2em;
+        }
+
+        .graph-wrapper {
+            position: relative;
+            height: 300px;
+        }
+
+        .no-data-message {
+            text-align: center;
+            color: #999;
+            padding: 40px 20px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Competitor Research</h1>
+        <p class="subtitle">Enter a company URL to discover their competitors</p>
+        
+        <form id="researchForm">
+            <div class="form-group">
+                <label for="companyUrl">Company Website URL</label>
+                <input 
+                    type="url" 
+                    id="companyUrl" 
+                    name="url" 
+                    placeholder="https://example.com" 
+                    required
+                    autocomplete="off"
+                >
+            </div>
+            <button type="submit" class="btn" id="researchBtn">Research</button>
+        </form>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p id="loadingText">Analyzing company and finding competitors...</p>
+            <div class="loading-status" id="loadingStatus"></div>
+        </div>
+
+        <div class="error" id="error"></div>
+
+        <div class="results" id="results">
+            <div class="results-header">
+                <h2>Research Results</h2>
+                <div class="results-stats" id="stats"></div>
+            </div>
+            <div class="competitors-list" id="competitorsList"></div>
+            <div class="completion-message" id="completionMessage">
+                ✓ Analysis Complete!
+            </div>
+        </div>
+
+        <div class="graphs-section" id="graphsSection">
+            <div class="graphs-header">
+                <h2>📈 Research Analytics</h2>
+                <p style="color: #666; font-size: 0.95em;">Data visualization across all competitors</p>
+            </div>
+            
+            <div class="graph-container">
+                <div class="graph-title">Networth Over Time</div>
+                <div class="graph-wrapper">
+                    <canvas id="networthChart"></canvas>
+                </div>
+            </div>
+
+            <div class="graph-container">
+                <div class="graph-title">Number of Users Over Time</div>
+                <div class="graph-wrapper">
+                    <canvas id="usersChart"></canvas>
+                </div>
+            </div>
+
+            <div class="graph-container">
+                <div class="graph-title">Funding Over Time</div>
+                <div class="graph-wrapper">
+                    <canvas id="fundingChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('researchForm');
+        const companyUrlInput = document.getElementById('companyUrl');
+        const researchBtn = document.getElementById('researchBtn');
+        const loading = document.getElementById('loading');
+        const loadingText = document.getElementById('loadingText');
+        const loadingStatus = document.getElementById('loadingStatus');
+        const error = document.getElementById('error');
+        const results = document.getElementById('results');
+        const stats = document.getElementById('stats');
+        const competitorsList = document.getElementById('competitorsList');
+        const completionMessage = document.getElementById('completionMessage');
+
+        // Store state
+        let competitorsMap = new Map();
+        let researchResultsMap = new Map();
+        let totalFound = 0;
+        let totalSaved = 0;
+        let eventSource = null;
+        
+        // Chart instances
+        let networthChart = null;
+        let usersChart = null;
+        let fundingChart = null;
+        
+        // Chart data storage
+        let chartData = {
+            networth: new Map(), // competitor_id -> [{year, value}, ...]
+            users: new Map(),
+            funding: new Map()
+        };
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const url = companyUrlInput.value.trim();
+            if (!url) {
+                showError('Please enter a valid URL');
+                return;
+            }
+
+            // Reset UI
+            hideError();
+            hideResults();
+            hideCompletion();
+            showLoading();
+            researchBtn.disabled = true;
+            competitorsMap.clear();
+            researchResultsMap.clear();
+            totalFound = 0;
+            totalSaved = 0;
+            chartData.networth.clear();
+            chartData.users.clear();
+            chartData.funding.clear();
+            document.getElementById('graphsSection').classList.remove('active');
+            updateLoadingText('Analyzing company and finding competitors...');
+            
+            // Reset charts
+            if (networthChart) {
+                networthChart.data.labels = [];
+                networthChart.data.datasets = [];
+                networthChart.update();
+            }
+            if (usersChart) {
+                usersChart.data.labels = [];
+                usersChart.data.datasets = [];
+                usersChart.update();
+            }
+            if (fundingChart) {
+                fundingChart.data.labels = [];
+                fundingChart.data.datasets = [];
+                fundingChart.update();
+            }
+
+            try {
+                // Use EventSource with GET request (URL as query parameter)
+                // Since EventSource doesn't support POST, we'll use a workaround
+                const encodedUrl = encodeURIComponent(url);
+                eventSource = new EventSource(`/api/competitors/?url=${encodedUrl}`);
+
+                eventSource.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        handleStreamEvent(data);
+                    } catch (err) {
+                        console.error('Error parsing event data:', err);
+                    }
+                };
+
+                eventSource.onerror = (err) => {
+                    console.error('EventSource error:', err);
+                    if (eventSource.readyState === EventSource.CLOSED) {
+                        eventSource.close();
+                        hideLoading();
+                        researchBtn.disabled = false;
+                        if (competitorsMap.size === 0) {
+                            showError('Connection closed unexpectedly. Please try again.');
+                        }
+                    }
+                };
+
+            } catch (err) {
+                showError(err.message || 'Failed to start research. Please try again.');
+                hideLoading();
+                researchBtn.disabled = false;
+            }
+        });
+
+        function handleStreamEvent(data) {
+            switch (data.type) {
+                case 'status':
+                    updateLoadingText(data.message);
+                    break;
+                
+                case 'competitors_list':
+                    totalFound = data.total || 0;
+                    updateStats();
+                    break;
+                
+                case 'competitor':
+                    addCompetitor(data.competitor);
+                    break;
+                
+                case 'research_status':
+                    updateCompetitorResearchStatus(data.competitor_id, 'analyzing', data.competitor_name);
+                    break;
+                
+                case 'competitor_research':
+                    updateCompetitorResearchResult(data.result);
+                    break;
+                
+                case 'complete':
+                    handleComplete(data);
+                    break;
+                
+                case 'error':
+                    showError(data.error || 'An error occurred');
+                    if (eventSource) {
+                        eventSource.close();
+                    }
+                    hideLoading();
+                    researchBtn.disabled = false;
+                    break;
+            }
+        }
+
+        function addCompetitor(competitor) {
+            // Use a unique key for each competitor
+            const key = competitor.id || competitor.name || `competitor_${competitorsMap.size}`;
+            
+            competitorsMap.set(key, competitor);
+            if (!competitor.error && competitor.id) {
+                totalSaved++;
+            }
+            
+            updateStats();
+            renderCompetitors();
+            showResults();
+        }
+
+        function updateCompetitorResearchStatus(competitorId, status, competitorName) {
+            if (!competitorId) return;
+            
+            // Try to find competitor by ID or name
+            let competitor = competitorsMap.get(competitorId);
+            if (!competitor) {
+                // Try to find by iterating (in case ID format doesn't match)
+                for (let [key, comp] of competitorsMap.entries()) {
+                    if (comp.id === competitorId || comp.name === competitorName) {
+                        competitor = comp;
+                        break;
+                    }
+                }
+            }
+            
+            if (competitor) {
+                competitor.researchStatus = status;
+                renderCompetitors();
+            }
+            
+            if (status === 'analyzing') {
+                updateLoadingText(`Analyzing ${competitorName || 'competitor'}...`);
+            }
+        }
+
+        function updateCompetitorResearchResult(result) {
+            if (!result.competitor_id) return;
+            
+            researchResultsMap.set(result.competitor_id, result);
+            
+            // Try to find competitor by ID
+            let competitor = competitorsMap.get(result.competitor_id);
+            if (!competitor) {
+                // Try to find by iterating
+                for (let [key, comp] of competitorsMap.entries()) {
+                    if (comp.id === result.competitor_id || comp.name === result.competitor_name) {
+                        competitor = comp;
+                        break;
+                    }
+                }
+            }
+            
+            if (competitor) {
+                competitor.researchStatus = result.status;
+                competitor.researchResult = result;
+                renderCompetitors();
+            }
+            
+            // Update charts immediately when research data is available
+            if (result.status === 'success' && (result.networth || result.users || result.funding)) {
+                updateChartsWithData(result.competitor_id, result.competitor_name, result);
+            }
+        }
+
+        function handleComplete(data) {
+            totalFound = data.total_found || 0;
+            totalSaved = data.total_saved || 0;
+            
+            if (data.research_results) {
+                data.research_results.forEach(result => {
+                    researchResultsMap.set(result.competitor_id, result);
+                    // Update charts with any data that wasn't streamed
+                    if (result.status === 'success' && result.networth && result.users && result.funding) {
+                        updateChartsWithData(result.competitor_id, result.competitor_name, result);
+                    }
+                });
+            }
+            
+            updateStats();
+            renderCompetitors();
+            hideLoading();
+            showCompletion();
+            researchBtn.disabled = false;
+            
+            if (eventSource) {
+                eventSource.close();
+            }
+        }
+
+        function renderCompetitors() {
+            if (competitorsMap.size === 0) {
+                competitorsList.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No competitors found yet...</p>';
+                return;
+            }
+
+            competitorsList.innerHTML = Array.from(competitorsMap.values()).map(competitor => {
+                const hasError = competitor.error ? 'error' : '';
+                const createdBadge = competitor.created ? '<span class="success-badge">New</span>' : '';
+                const isAnalyzing = competitor.researchStatus === 'analyzing';
+                const researchStatus = getResearchStatus(competitor.id, competitor.researchResult);
+                const competitorKey = competitor.id || competitor.name || 'unknown';
+                
+                return `
+                    <div class="competitor-item ${isAnalyzing ? 'analyzing' : ''}" data-id="${competitorKey}">
+                        <div class="competitor-name">
+                            ${escapeHtml(competitor.name || 'Unknown')} ${createdBadge}
+                        </div>
+                        ${competitor.url ? `
+                            <a href="${escapeHtml(competitor.url)}" target="_blank" class="competitor-url">
+                                ${escapeHtml(competitor.url)}
+                            </a>
+                        ` : '<span style="color: #999;">No URL available</span>'}
+                        ${hasError ? `<div class="research-status error">Error: ${escapeHtml(competitor.error)}</div>` : ''}
+                        ${isAnalyzing ? '<div class="research-status">⏳ Analyzing...</div>' : ''}
+                        ${researchStatus ? `<div class="research-status ${researchStatus.class}">${researchStatus.text}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateStats() {
+            stats.innerHTML = `
+                <div class="stat">
+                    <div class="stat-label">Total Found</div>
+                    <div class="stat-value">${totalFound}</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Saved to Database</div>
+                    <div class="stat-value">${totalSaved}</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Researching</div>
+                    <div class="stat-value">${Array.from(competitorsMap.values()).filter(c => c.researchStatus === 'analyzing').length}</div>
+                </div>
+            `;
+        }
+
+        function getResearchStatus(competitorId, directResult) {
+            if (!competitorId) return null;
+            
+            const result = directResult || researchResultsMap.get(competitorId);
+            if (!result) return null;
+
+            if (result.status === 'success') {
+                const counts = [];
+                if (result.networth_count > 0) counts.push(`${result.networth_count} networth`);
+                if (result.users_count > 0) counts.push(`${result.users_count} users`);
+                if (result.funding_count > 0) counts.push(`${result.funding_count} funding`);
+                return {
+                    class: 'success',
+                    text: `✓ Research complete: ${counts.join(', ')} records saved`
+                };
+            } else if (result.status === 'failed' || result.status === 'error') {
+                return {
+                    class: 'error',
+                    text: `✗ Research failed: ${result.error || 'Unknown error'}`
+                };
+            }
+            return null;
+        }
+
+        function showLoading() {
+            loading.classList.add('active');
+        }
+
+        function hideLoading() {
+            loading.classList.remove('active');
+        }
+
+        function updateLoadingText(text) {
+            loadingText.textContent = text;
+        }
+
+        function showError(message) {
+            error.textContent = message;
+            error.classList.add('active');
+        }
+
+        function hideError() {
+            error.classList.remove('active');
+        }
+
+        function showResults() {
+            results.classList.add('active');
+        }
+
+        function hideResults() {
+            results.classList.remove('active');
+        }
+
+        function showCompletion() {
+            completionMessage.classList.add('active');
+        }
+
+        function hideCompletion() {
+            completionMessage.classList.remove('active');
+        }
+
+        function escapeHtml(text) {
+            if (text === null || text === undefined) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Initialize charts
+        function initializeCharts() {
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                    }
+                },
+                scales: {
+                    x: {
+                        display: true,
+                        title: {
+                            display: true,
+                            text: 'Year'
+                        }
+                    },
+                    y: {
+                        display: true,
+                        beginAtZero: true
+                    }
+                }
+            };
+
+            // Networth Chart
+            const networthCtx = document.getElementById('networthChart').getContext('2d');
+            networthChart = new Chart(networthCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: []
+                },
+                options: {
+                    ...chartOptions,
+                    scales: {
+                        ...chartOptions.scales,
+                        y: {
+                            ...chartOptions.scales.y,
+                            title: {
+                                display: true,
+                                text: 'Networth (USD)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    if (value >= 1000000) {
+                                        return '$' + (value / 1000000).toFixed(1) + 'M';
+                                    } else if (value >= 1000) {
+                                        return '$' + (value / 1000).toFixed(1) + 'K';
+                                    }
+                                    return '$' + value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Users Chart
+            const usersCtx = document.getElementById('usersChart').getContext('2d');
+            usersChart = new Chart(usersCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: []
+                },
+                options: {
+                    ...chartOptions,
+                    scales: {
+                        ...chartOptions.scales,
+                        y: {
+                            ...chartOptions.scales.y,
+                            title: {
+                                display: true,
+                                text: 'Number of Users'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    if (value >= 1000000) {
+                                        return (value / 1000000).toFixed(1) + 'M';
+                                    } else if (value >= 1000) {
+                                        return (value / 1000).toFixed(1) + 'K';
+                                    }
+                                    return value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Funding Chart
+            const fundingCtx = document.getElementById('fundingChart').getContext('2d');
+            fundingChart = new Chart(fundingCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: []
+                },
+                options: {
+                    ...chartOptions,
+                    scales: {
+                        ...chartOptions.scales,
+                        y: {
+                            ...chartOptions.scales.y,
+                            title: {
+                                display: true,
+                                text: 'Funding (USD)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    if (value >= 1000000) {
+                                        return '$' + (value / 1000000).toFixed(1) + 'M';
+                                    } else if (value >= 1000) {
+                                        return '$' + (value / 1000).toFixed(1) + 'K';
+                                    }
+                                    return '$' + value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateChartsWithData(competitorId, competitorName, result) {
+            let hasData = false;
+            
+            // Store data
+            if (result.networth && Array.isArray(result.networth) && result.networth.length > 0) {
+                chartData.networth.set(competitorId, result.networth);
+                hasData = true;
+            }
+            if (result.users && Array.isArray(result.users) && result.users.length > 0) {
+                chartData.users.set(competitorId, result.users);
+                hasData = true;
+            }
+            if (result.funding && Array.isArray(result.funding) && result.funding.length > 0) {
+                chartData.funding.set(competitorId, result.funding);
+                hasData = true;
+            }
+
+            // Only update if we have actual data
+            if (!hasData) {
+                return;
+            }
+
+            // Show graphs section immediately when first data arrives
+            const graphsSection = document.getElementById('graphsSection');
+            if (!graphsSection.classList.contains('active')) {
+                graphsSection.classList.add('active');
+                // Smooth scroll to graphs when they first appear
+                setTimeout(() => {
+                    graphsSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 300);
+            }
+
+            // Update charts
+            updateChart(networthChart, chartData.networth, competitorName, 'Networth');
+            updateChart(usersChart, chartData.users, competitorName, 'Users');
+            updateChart(fundingChart, chartData.funding, competitorName, 'Funding');
+        }
+
+        function updateChart(chart, dataMap, competitorName, dataType) {
+            if (!chart || dataMap.size === 0) return;
+
+            // Collect all years from all competitors
+            const allYears = new Set();
+            dataMap.forEach(dataArray => {
+                dataArray.forEach(item => {
+                    if (item.year) {
+                        allYears.add(item.year);
+                    }
+                });
+            });
+
+            // Sort years
+            const sortedYears = Array.from(allYears).sort((a, b) => a - b);
+
+            // Generate colors for each competitor
+            const colors = [
+                { border: 'rgb(102, 126, 234)', background: 'rgba(102, 126, 234, 0.1)' },
+                { border: 'rgb(118, 75, 162)', background: 'rgba(118, 75, 162, 0.1)' },
+                { border: 'rgb(255, 99, 132)', background: 'rgba(255, 99, 132, 0.1)' },
+                { border: 'rgb(54, 162, 235)', background: 'rgba(54, 162, 235, 0.1)' },
+                { border: 'rgb(255, 206, 86)', background: 'rgba(255, 206, 86, 0.1)' },
+                { border: 'rgb(75, 192, 192)', background: 'rgba(75, 192, 192, 0.1)' },
+                { border: 'rgb(153, 102, 255)', background: 'rgba(153, 102, 255, 0.1)' },
+                { border: 'rgb(255, 159, 64)', background: 'rgba(255, 159, 64, 0.1)' }
+            ];
+
+            // Build datasets for each competitor
+            const datasets = [];
+            let colorIndex = 0;
+
+            dataMap.forEach((dataArray, compId) => {
+                // Get competitor name
+                const comp = competitorsMap.get(compId);
+                const name = comp ? comp.name : competitorName || `Competitor ${compId}`;
+
+                // Create data points for all years
+                const dataPoints = sortedYears.map(year => {
+                    const item = dataArray.find(d => d.year === year);
+                    return item ? item.value : null;
+                });
+
+                // Only add dataset if there's at least one data point
+                if (dataPoints.some(v => v !== null)) {
+                    const color = colors[colorIndex % colors.length];
+                    datasets.push({
+                        label: name,
+                        data: dataPoints,
+                        borderColor: color.border,
+                        backgroundColor: color.background,
+                        tension: 0.4,
+                        fill: false,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    });
+                    colorIndex++;
+                }
+            });
+
+            // Update chart
+            chart.data.labels = sortedYears;
+            chart.data.datasets = datasets;
+            chart.update('none'); // 'none' mode for smooth updates
+        }
+
+        // Initialize charts when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeCharts();
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (eventSource) {
+                eventSource.close();
+            }
+        });
+    </script>
+</body>
+</html>
+

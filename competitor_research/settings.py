@@ -34,9 +34,30 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 SECRET_KEY = env('SECRET_KEY', default="django-insecure-5!py#86zj4j2o3yc1e$stf-wd5_dlalqu9s4ar2cgs68p-6&b0")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env('DEBUG')
+DEBUG = env.bool('DEBUG', default=False)
 
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[] if DEBUG else ['localhost', '127.0.0.1', '.onrender.com'])
+# Handle ALLOWED_HOSTS - support both comma-separated string and list
+ALLOWED_HOSTS = []
+allowed_hosts_env = env('ALLOWED_HOSTS', default=None)
+if allowed_hosts_env:
+    # If it's a comma-separated string, split it; otherwise use as-is
+    if isinstance(allowed_hosts_env, str):
+        ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_env.split(',') if host.strip()]
+    elif isinstance(allowed_hosts_env, list):
+        ALLOWED_HOSTS = allowed_hosts_env
+    else:
+        ALLOWED_HOSTS = [str(allowed_hosts_env)]
+
+# Add default hosts for development
+if DEBUG:
+    if 'localhost' not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append('localhost')
+    if '127.0.0.1' not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append('127.0.0.1')
+
+# Always add .onrender.com for Render deployments (wildcard matches all Render subdomains)
+if '.onrender.com' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('.onrender.com')
 
 # Application definition
 

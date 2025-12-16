@@ -14,8 +14,6 @@ services:
         generateValue: true
       - key: DEBUG
         value: False
-      - key: ALLOWED_HOSTS
-        value: competitor-research.onrender.com
       - key: DATABASE_URL
         sync: false
       - key: OPENAI_API_KEY

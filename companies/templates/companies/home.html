@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Competitor Research - Find Your Competitors</title>
+    <title>Competitor Spy - Discover Competitors & Market Trends</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         * {
@@ -14,21 +14,19 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #0a0e27;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(0, 217, 255, 0.1) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(0, 184, 212, 0.1) 0px, transparent 50%);
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
+            color: #e0e0e0;
+            padding: 40px 20px;
         }
 
         .container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 1200px;
+            max-width: 1400px;
             width: 100%;
-            padding: 40px;
+            margin: 0 auto;
             animation: fadeIn 0.5s ease-in;
         }
 
@@ -43,69 +41,162 @@
             }
         }
 
-        h1 {
-            color: #333;
-            font-size: 2.5em;
-            margin-bottom: 10px;
+        .header {
             text-align: center;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            margin-bottom: 50px;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            border: 2px solid #00d9ff;
+            border-radius: 50%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo-icon::before {
+            content: '';
+            width: 20px;
+            height: 20px;
+            border: 2px solid #00d9ff;
+            border-radius: 50%;
+            position: absolute;
+        }
+
+        .logo-icon::after {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #00d9ff;
+            border-radius: 50%;
+            position: absolute;
+        }
+
+        h1 {
+            color: #00d9ff;
+            font-size: 3em;
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: -0.5px;
         }
 
         .subtitle {
             text-align: center;
-            color: #666;
-            margin-bottom: 40px;
+            color: #a0a0a0;
+            margin-bottom: 50px;
             font-size: 1.1em;
+            font-weight: 400;
+        }
+
+        .search-section {
+            display: flex;
+            gap: 12px;
+            max-width: 800px;
+            margin: 0 auto 60px;
+            align-items: stretch;
         }
 
         .form-group {
-            margin-bottom: 30px;
+            flex: 1;
+            position: relative;
         }
 
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #333;
-            font-weight: 600;
-            font-size: 0.95em;
+        .search-input-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            color: #00d9ff;
+            pointer-events: none;
+        }
+
+        .search-icon svg {
+            width: 100%;
+            height: 100%;
+            fill: currentColor;
         }
 
         input[type="url"] {
             width: 100%;
-            padding: 15px 20px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
+            padding: 18px 20px 18px 55px;
+            background: rgba(20, 30, 60, 0.8);
+            border: 2px solid rgba(0, 217, 255, 0.3);
+            border-radius: 12px;
             font-size: 1em;
+            color: #e0e0e0;
             transition: all 0.3s ease;
             outline: none;
         }
 
+        input[type="url"]::placeholder {
+            color: #6b7280;
+        }
+
         input[type="url"]:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: #00d9ff;
+            box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.1);
+            background: rgba(20, 30, 60, 0.95);
         }
 
         .btn {
-            width: 100%;
-            padding: 15px 30px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            padding: 18px 35px;
+            background: #00d9ff;
+            color: #0a0e27;
             border: none;
-            border-radius: 10px;
-            font-size: 1.1em;
+            border-radius: 12px;
+            font-size: 1em;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .btn-icon {
+            width: 18px;
+            height: 18px;
+            border: 2px solid #0a0e27;
+            border-radius: 50%;
+            position: relative;
+            display: inline-block;
+        }
+
+        .btn-icon::before {
+            content: '';
+            width: 10px;
+            height: 10px;
+            border: 2px solid #0a0e27;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
         }
 
         .btn:hover:not(:disabled) {
+            background: #00c4e6;
             transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 8px 20px rgba(0, 217, 255, 0.3);
         }
 
         .btn:active:not(:disabled) {
@@ -113,14 +204,51 @@
         }
 
         .btn:disabled {
-            opacity: 0.6;
+            opacity: 0.5;
             cursor: not-allowed;
+        }
+
+        .ready-section {
+            text-align: center;
+            margin: 40px auto;
+            max-width: 600px;
+            display: none;
+        }
+
+        .ready-section.active {
+            display: block;
+        }
+
+        .ready-icon {
+            width: 80px;
+            height: 80px;
+            background: rgba(0, 217, 255, 0.1);
+            border: 2px solid rgba(0, 217, 255, 0.3);
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+        }
+
+        .ready-text {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #e0e0e0;
+            margin-bottom: 15px;
+        }
+
+        .ready-description {
+            color: #a0a0a0;
+            font-size: 0.95em;
+            line-height: 1.6;
         }
 
         .loading {
             display: none;
             text-align: center;
-            margin-top: 20px;
+            margin-top: 40px;
         }
 
         .loading.active {
@@ -128,8 +256,8 @@
         }
 
         .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
+            border: 3px solid rgba(0, 217, 255, 0.2);
+            border-top: 3px solid #00d9ff;
             border-radius: 50%;
             width: 40px;
             height: 40px;
@@ -144,7 +272,7 @@
 
         .results {
             display: none;
-            margin-top: 40px;
+            margin-top: 60px;
             animation: fadeIn 0.5s ease-in;
         }
 
@@ -153,26 +281,43 @@
         }
 
         .results-header {
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #e0e0e0;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         .results-header h2 {
-            color: #333;
-            font-size: 1.8em;
-            margin-bottom: 10px;
+            color: #e0e0e0;
+            font-size: 2em;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .results-count-badge {
+            background: rgba(0, 217, 255, 0.2);
+            color: #00d9ff;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            border: 1px solid rgba(0, 217, 255, 0.3);
         }
 
         .results-stats {
             display: flex;
-            gap: 20px;
+            gap: 15px;
             flex-wrap: wrap;
         }
 
         .stat {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: rgba(20, 30, 60, 0.6);
+            border: 1px solid rgba(0, 217, 255, 0.2);
+            color: #e0e0e0;
             padding: 15px 20px;
             border-radius: 10px;
             flex: 1;
@@ -181,58 +326,104 @@
 
         .stat-label {
             font-size: 0.85em;
-            opacity: 0.9;
+            color: #a0a0a0;
             margin-bottom: 5px;
         }
 
         .stat-value {
             font-size: 1.5em;
             font-weight: 700;
+            color: #00d9ff;
         }
 
         .competitors-list {
             margin-top: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
         }
 
         .competitor-item {
-            background: #f8f9fa;
+            background: rgba(20, 30, 60, 0.6);
+            border: 2px solid rgba(0, 217, 255, 0.2);
             padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            border-left: 4px solid #667eea;
+            border-radius: 12px;
             transition: all 0.3s ease;
+            position: relative;
         }
 
         .competitor-item:hover {
-            transform: translateX(5px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border-color: #00d9ff;
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0, 217, 255, 0.2);
+        }
+
+        .competitor-item.target {
+            border-color: #00d9ff;
+            background: rgba(0, 217, 255, 0.05);
+        }
+
+        .competitor-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(0, 217, 255, 0.2);
+            color: #00d9ff;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+            border: 1px solid rgba(0, 217, 255, 0.3);
+        }
+
+        .competitor-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(0, 217, 255, 0.1);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            font-size: 1.5em;
         }
 
         .competitor-name {
             font-size: 1.2em;
             font-weight: 600;
-            color: #333;
+            color: #e0e0e0;
             margin-bottom: 8px;
         }
 
         .competitor-url {
-            color: #667eea;
+            color: #00d9ff;
             text-decoration: none;
-            font-size: 0.95em;
+            font-size: 0.9em;
+            display: block;
+            margin-bottom: 10px;
+            word-break: break-all;
         }
 
         .competitor-url:hover {
             text-decoration: underline;
         }
 
+        .competitor-description {
+            color: #a0a0a0;
+            font-size: 0.85em;
+            line-height: 1.5;
+            margin-top: 10px;
+        }
+
         .error {
             display: none;
-            background: #fee;
-            color: #c33;
+            background: rgba(220, 53, 69, 0.1);
+            border: 1px solid rgba(220, 53, 69, 0.3);
+            color: #ff6b6b;
             padding: 15px 20px;
             border-radius: 10px;
             margin-top: 20px;
-            border-left: 4px solid #c33;
+            border-left: 4px solid #dc3545;
         }
 
         .error.active {
@@ -252,43 +443,47 @@
 
         .research-status {
             margin-top: 10px;
-            font-size: 0.9em;
-            color: #666;
+            font-size: 0.85em;
+            color: #a0a0a0;
+            padding: 8px 12px;
+            background: rgba(160, 160, 160, 0.1);
+            border-radius: 6px;
         }
 
         .research-status.success {
-            color: #4caf50;
+            color: #4ade80;
+            background: rgba(74, 222, 128, 0.1);
         }
 
         .research-status.error {
-            color: #c33;
+            color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
         }
 
         .loading-status {
             margin-top: 10px;
             font-size: 0.9em;
-            color: #667eea;
+            color: #00d9ff;
             font-weight: 500;
         }
 
         .competitor-item.analyzing {
-            opacity: 0.7;
-            border-left-color: #ffa500;
+            border-color: rgba(255, 193, 7, 0.5);
+            animation: pulse 2s ease-in-out infinite;
         }
 
-        .competitor-item.analyzing::after {
-            content: " (Analyzing...)";
-            color: #ffa500;
-            font-size: 0.9em;
-            font-weight: normal;
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
         }
 
         .completion-message {
-            background: #4caf50;
-            color: white;
+            background: rgba(74, 222, 128, 0.1);
+            border: 1px solid rgba(74, 222, 128, 0.3);
+            color: #4ade80;
             padding: 15px 20px;
             border-radius: 10px;
-            margin-top: 20px;
+            margin-top: 30px;
             text-align: center;
             font-weight: 600;
             display: none;
@@ -300,7 +495,7 @@
         }
 
         .graphs-section {
-            margin-top: 40px;
+            margin-top: 60px;
             display: none;
         }
 
@@ -310,76 +505,117 @@
         }
 
         .graphs-header {
-            margin-bottom: 30px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #e0e0e0;
+            margin-bottom: 40px;
         }
 
         .graphs-header h2 {
-            color: #333;
-            font-size: 1.8em;
+            color: #e0e0e0;
+            font-size: 2em;
+            font-weight: 600;
             margin-bottom: 10px;
         }
 
+        .graphs-header p {
+            color: #a0a0a0;
+            font-size: 0.95em;
+        }
+
         .graph-container {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 20px;
+            background: rgba(20, 30, 60, 0.6);
+            border: 1px solid rgba(0, 217, 255, 0.2);
+            border-radius: 12px;
+            padding: 25px;
             margin-bottom: 30px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
         }
 
         .graph-title {
-            font-size: 1.2em;
+            font-size: 1.3em;
             font-weight: 600;
-            color: #333;
-            margin-bottom: 15px;
+            color: #e0e0e0;
+            margin-bottom: 20px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
         }
 
-        .graph-title::before {
-            content: "📊";
+        .graph-title-icon {
+            width: 32px;
+            height: 32px;
+            background: rgba(0, 217, 255, 0.1);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #00d9ff;
             font-size: 1.2em;
         }
 
         .graph-wrapper {
             position: relative;
-            height: 300px;
+            height: 350px;
         }
 
         .no-data-message {
             text-align: center;
-            color: #999;
+            color: #6b7280;
             padding: 40px 20px;
             font-style: italic;
+        }
+
+        .disclaimer {
+            text-align: center;
+            color: #6b7280;
+            font-size: 0.85em;
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(0, 217, 255, 0.1);
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🔍 Competitor Research</h1>
-        <p class="subtitle">Enter a company URL to discover their competitors</p>
-        
-        <form id="researchForm">
-            <div class="form-group">
-                <label for="companyUrl">Company Website URL</label>
-                <input 
-                    type="url" 
-                    id="companyUrl" 
-                    name="url" 
-                    placeholder="https://example.com" 
-                    required
-                    autocomplete="off"
-                >
+        <div class="header">
+            <div class="logo-container">
+                <div class="logo-icon"></div>
+                <h1>Competitor Spy</h1>
             </div>
-            <button type="submit" class="btn" id="researchBtn">Research</button>
+            <p class="subtitle">Enter a company's website to discover their competitors and analyze market trends</p>
+        </div>
+        
+        <form id="researchForm" class="search-section">
+            <div class="form-group">
+                <div class="search-input-wrapper">
+                    <div class="search-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                    </div>
+                    <input 
+                        type="url" 
+                        id="companyUrl" 
+                        name="url" 
+                        placeholder="Enter company website (e.g., stripe.com)" 
+                        required
+                        autocomplete="off"
+                    >
+                </div>
+            </div>
+            <button type="submit" class="btn" id="researchBtn">
+                <span class="btn-icon"></span>
+                Search
+            </button>
         </form>
+
+        <div class="ready-section" id="readySection">
+            <div class="ready-icon">📈</div>
+            <div class="ready-text">Ready to Analyze</div>
+            <p class="ready-description">Enter a company website above to discover competitors and view market insights including net worth, user growth, and funding trends.</p>
+        </div>
 
         <div class="loading" id="loading">
             <div class="spinner"></div>
-            <p id="loadingText">Analyzing company and finding competitors...</p>
+            <p id="loadingText" style="color: #e0e0e0; margin-top: 15px;">Analyzing company and finding competitors...</p>
             <div class="loading-status" id="loadingStatus"></div>
         </div>
 
@@ -387,7 +623,7 @@
 
         <div class="results" id="results">
             <div class="results-header">
-                <h2>Research Results</h2>
+                <h2>Competitive Landscape <span class="results-count-badge" id="countBadge"></span></h2>
                 <div class="results-stats" id="stats"></div>
             </div>
             <div class="competitors-list" id="competitorsList"></div>
@@ -398,29 +634,42 @@
 
         <div class="graphs-section" id="graphsSection">
             <div class="graphs-header">
-                <h2>📈 Research Analytics</h2>
-                <p style="color: #666; font-size: 0.95em;">Data visualization across all competitors</p>
+                <h2>Market Analysis</h2>
+                <p>Data visualization across all competitors</p>
             </div>
             
             <div class="graph-container">
-                <div class="graph-title">Networth Over Time</div>
+                <div class="graph-title">
+                    <div class="graph-title-icon">$</div>
+                    $ Net Worth Timeline
+                </div>
                 <div class="graph-wrapper">
                     <canvas id="networthChart"></canvas>
                 </div>
             </div>
 
             <div class="graph-container">
-                <div class="graph-title">Number of Users Over Time</div>
+                <div class="graph-title">
+                    <div class="graph-title-icon">👥</div>
+                    User Growth
+                </div>
                 <div class="graph-wrapper">
                     <canvas id="usersChart"></canvas>
                 </div>
             </div>
 
             <div class="graph-container">
-                <div class="graph-title">Funding Over Time</div>
+                <div class="graph-title">
+                    <div class="graph-title-icon">↑</div>
+                    Funding Rounds
+                </div>
                 <div class="graph-wrapper">
                     <canvas id="fundingChart"></canvas>
                 </div>
+            </div>
+
+            <div class="disclaimer">
+                Data shown is for demonstration purposes. Connect to real data sources for accurate competitive intelligence.
             </div>
         </div>
     </div>
@@ -437,6 +686,8 @@
         const stats = document.getElementById('stats');
         const competitorsList = document.getElementById('competitorsList');
         const completionMessage = document.getElementById('completionMessage');
+        const readySection = document.getElementById('readySection');
+        const countBadge = document.getElementById('countBadge');
 
         // Store state
         let competitorsMap = new Map();
@@ -470,6 +721,7 @@
             hideError();
             hideResults();
             hideCompletion();
+            hideReadySection();
             showLoading();
             researchBtn.disabled = true;
             competitorsMap.clear();
@@ -666,27 +918,41 @@
 
         function renderCompetitors() {
             if (competitorsMap.size === 0) {
-                competitorsList.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No competitors found yet...</p>';
+                competitorsList.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 40px;">No competitors found yet...</p>';
                 return;
             }
 
-            competitorsList.innerHTML = Array.from(competitorsMap.values()).map(competitor => {
+            // Update count badge
+            if (countBadge) {
+                countBadge.textContent = `${competitorsMap.size} companies`;
+            }
+
+            // Get target company (first one added, or mark with target badge)
+            const competitors = Array.from(competitorsMap.values());
+            const targetCompanyId = competitors.length > 0 ? (competitors[0].id || competitors[0].name) : null;
+
+            competitorsList.innerHTML = competitors.map((competitor, index) => {
                 const hasError = competitor.error ? 'error' : '';
-                const createdBadge = competitor.created ? '<span class="success-badge">New</span>' : '';
+                const isTarget = index === 0 || competitor.id === targetCompanyId;
                 const isAnalyzing = competitor.researchStatus === 'analyzing';
                 const researchStatus = getResearchStatus(competitor.id, competitor.researchResult);
                 const competitorKey = competitor.id || competitor.name || 'unknown';
                 
                 return `
-                    <div class="competitor-item ${isAnalyzing ? 'analyzing' : ''}" data-id="${competitorKey}">
+                    <div class="competitor-item ${isTarget ? 'target' : ''} ${isAnalyzing ? 'analyzing' : ''}" data-id="${competitorKey}">
+                        ${isTarget ? '<span class="competitor-badge">TARGET</span>' : ''}
+                        <div class="competitor-icon">📄</div>
                         <div class="competitor-name">
-                            ${escapeHtml(competitor.name || 'Unknown')} ${createdBadge}
+                            ${escapeHtml(competitor.name || 'Unknown')}
                         </div>
                         ${competitor.url ? `
                             <a href="${escapeHtml(competitor.url)}" target="_blank" class="competitor-url">
                                 ${escapeHtml(competitor.url)}
                             </a>
-                        ` : '<span style="color: #999;">No URL available</span>'}
+                        ` : '<span style="color: #6b7280;">No URL available</span>'}
+                        ${competitor.description ? `
+                            <div class="competitor-description">${escapeHtml(competitor.description)}</div>
+                        ` : ''}
                         ${hasError ? `<div class="research-status error">Error: ${escapeHtml(competitor.error)}</div>` : ''}
                         ${isAnalyzing ? '<div class="research-status">⏳ Analyzing...</div>' : ''}
                         ${researchStatus ? `<div class="research-status ${researchStatus.class}">${researchStatus.text}</div>` : ''}
@@ -773,6 +1039,14 @@
             completionMessage.classList.remove('active');
         }
 
+        function showReadySection() {
+            readySection.classList.add('active');
+        }
+
+        function hideReadySection() {
+            readySection.classList.remove('active');
+        }
+
         function escapeHtml(text) {
             if (text === null || text === undefined) return '';
             const div = document.createElement('div');
@@ -780,32 +1054,73 @@
             return div.innerHTML;
         }
 
-        // Initialize charts
-        function initializeCharts() {
+            // Initialize charts
+            function initializeCharts() {
             const chartOptions = {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
                         display: true,
-                        position: 'top',
+                        position: 'bottom',
+                        labels: {
+                            color: '#a0a0a0',
+                            padding: 15,
+                            font: {
+                                size: 12
+                            },
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
                     },
                     tooltip: {
                         mode: 'index',
                         intersect: false,
+                        backgroundColor: 'rgba(20, 30, 60, 0.95)',
+                        titleColor: '#e0e0e0',
+                        bodyColor: '#e0e0e0',
+                        borderColor: 'rgba(0, 217, 255, 0.3)',
+                        borderWidth: 1,
+                        padding: 12,
+                        cornerRadius: 8
                     }
                 },
                 scales: {
                     x: {
                         display: true,
+                        grid: {
+                            color: 'rgba(0, 217, 255, 0.1)',
+                            lineWidth: 1
+                        },
+                        ticks: {
+                            color: '#a0a0a0',
+                            font: {
+                                size: 11
+                            }
+                        },
                         title: {
                             display: true,
-                            text: 'Year'
+                            text: 'Year',
+                            color: '#e0e0e0',
+                            font: {
+                                size: 12,
+                                weight: 'bold'
+                            }
                         }
                     },
                     y: {
                         display: true,
-                        beginAtZero: true
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 217, 255, 0.1)',
+                            lineWidth: 1
+                        },
+                        ticks: {
+                            color: '#a0a0a0',
+                            font: {
+                                size: 11
+                            }
+                        }
                     }
                 }
             };
@@ -826,7 +1141,12 @@
                             ...chartOptions.scales.y,
                             title: {
                                 display: true,
-                                text: 'Networth (USD)'
+                                text: 'Networth (USD)',
+                                color: '#e0e0e0',
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                }
                             },
                             ticks: {
                                 callback: function(value) {
@@ -859,7 +1179,12 @@
                             ...chartOptions.scales.y,
                             title: {
                                 display: true,
-                                text: 'Number of Users'
+                                text: 'Number of Users',
+                                color: '#e0e0e0',
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                }
                             },
                             ticks: {
                                 callback: function(value) {
@@ -892,7 +1217,12 @@
                             ...chartOptions.scales.y,
                             title: {
                                 display: true,
-                                text: 'Funding (USD)'
+                                text: 'Funding (USD)',
+                                color: '#e0e0e0',
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                }
                             },
                             ticks: {
                                 callback: function(value) {
@@ -964,16 +1294,16 @@
             // Sort years
             const sortedYears = Array.from(allYears).sort((a, b) => a - b);
 
-            // Generate colors for each competitor
+            // Generate colors for each competitor (teal/cyan theme)
             const colors = [
-                { border: 'rgb(102, 126, 234)', background: 'rgba(102, 126, 234, 0.1)' },
-                { border: 'rgb(118, 75, 162)', background: 'rgba(118, 75, 162, 0.1)' },
-                { border: 'rgb(255, 99, 132)', background: 'rgba(255, 99, 132, 0.1)' },
-                { border: 'rgb(54, 162, 235)', background: 'rgba(54, 162, 235, 0.1)' },
-                { border: 'rgb(255, 206, 86)', background: 'rgba(255, 206, 86, 0.1)' },
-                { border: 'rgb(75, 192, 192)', background: 'rgba(75, 192, 192, 0.1)' },
-                { border: 'rgb(153, 102, 255)', background: 'rgba(153, 102, 255, 0.1)' },
-                { border: 'rgb(255, 159, 64)', background: 'rgba(255, 159, 64, 0.1)' }
+                { border: '#00d9ff', background: 'rgba(0, 217, 255, 0.1)' },
+                { border: '#a855f7', background: 'rgba(168, 85, 247, 0.1)' },
+                { border: '#10b981', background: 'rgba(16, 185, 129, 0.1)' },
+                { border: '#f59e0b', background: 'rgba(245, 158, 11, 0.1)' },
+                { border: '#ec4899', background: 'rgba(236, 72, 153, 0.1)' },
+                { border: '#3b82f6', background: 'rgba(59, 130, 246, 0.1)' },
+                { border: '#8b5cf6', background: 'rgba(139, 92, 246, 0.1)' },
+                { border: '#06b6d4', background: 'rgba(6, 182, 212, 0.1)' }
             ];
 
             // Build datasets for each competitor
@@ -1001,8 +1331,12 @@
                         backgroundColor: color.background,
                         tension: 0.4,
                         fill: false,
-                        pointRadius: 4,
-                        pointHoverRadius: 6
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        borderWidth: 2.5,
+                        pointBackgroundColor: color.border,
+                        pointBorderColor: '#0a0e27',
+                        pointBorderWidth: 2
                     });
                     colorIndex++;
                 }
@@ -1017,6 +1351,7 @@
         // Initialize charts when page loads
         document.addEventListener('DOMContentLoaded', () => {
             initializeCharts();
+            showReadySection();
         });
 
         // Cleanup on page unload

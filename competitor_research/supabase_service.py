@@ -390,6 +390,62 @@ class SupabaseService:
             else:
                 logger.error(f"Error creating company users: {str(e)}")
                 raise
+    
+    def get_company_analysis(self, company_id):
+        """
+        Get all analysis data (networth, users, funding) for a company.
+        
+        Args:
+            company_id: UUID of the company
+        
+        Returns:
+            Dictionary with 'networth', 'users', and 'funding' arrays, or None if no data exists
+        """
+        try:
+            # Fetch all three types of data
+            networth_data = self.get_company_networth(company_id=company_id)
+            users_data = self.get_company_users(company_id=company_id)
+            funding_data = self.get_company_funding(company_id=company_id)
+            
+            # Check if any data exists
+            if not networth_data and not users_data and not funding_data:
+                return None
+            
+            # Format the data to match the expected structure
+            analysis = {
+                "networth": [],
+                "users": [],
+                "funding": []
+            }
+            
+            # Format networth data
+            for item in networth_data:
+                analysis["networth"].append({
+                    "value": float(item.get("value_usd", 0)),
+                    "year": int(item.get("year", 0)),
+                    "source": item.get("source_url", "")
+                })
+            
+            # Format users data
+            for item in users_data:
+                analysis["users"].append({
+                    "value": int(item.get("value", 0)),
+                    "year": int(item.get("year", 0)),
+                    "source": item.get("source_url", "")
+                })
+            
+            # Format funding data
+            for item in funding_data:
+                analysis["funding"].append({
+                    "value": float(item.get("value_usd", 0)),
+                    "year": int(item.get("year", 0)),
+                    "source": item.get("source_url", "")
+                })
+            
+            return analysis
+        except Exception as e:
+            logger.error(f"Error fetching company analysis for {company_id}: {str(e)}")
+            return None
 
 
 # Convenience function to get a service instance

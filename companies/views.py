@@ -308,11 +308,42 @@ def stream_competitors_research(company_url):
             competitor_id = competitor.get("id")
             
             try:
-                # Send status that we're researching this competitor
-                yield f"data: {json.dumps({'type': 'research_status', 'competitor_id': competitor_id, 'competitor_name': competitor.get('name'), 'status': 'analyzing'})}\n\n"
+                # Send status that we're checking/researching this competitor
+                yield f"data: {json.dumps({'type': 'research_status', 'competitor_id': competitor_id, 'competitor_name': competitor.get('name'), 'status': 'checking'})}\n\n"
                 
-                # Build the research prompt
-                research_prompt = """You are a business analyst with 20 years of experience. You can take any company's website url, and do research about it and figure out how their networth has changed since they have started their company, how their number of users have changed since they started the business and how much funding they have made since the start of their company.
+                # Check if analysis already exists in Supabase
+                existing_analysis = supabase_service.get_company_analysis(competitor_id)
+                
+                if existing_analysis:
+                    # Analysis exists, stream it directly
+                    logger.info(f"Found existing analysis for {competitor.get('name')}, streaming from database")
+                    yield f"data: {json.dumps({'type': 'research_status', 'competitor_id': competitor_id, 'competitor_name': competitor.get('name'), 'status': 'found_in_db'})}\n\n"
+                    
+                    research_result = {
+                        "competitor_id": competitor_id,
+                        "competitor_name": competitor.get("name"),
+                        "status": "success",
+                        "from_cache": True,  # Indicate this came from database
+                        "networth_count": len(existing_analysis.get("networth", [])),
+                        "users_count": len(existing_analysis.get("users", [])),
+                        "funding_count": len(existing_analysis.get("funding", [])),
+                        # Include actual data for graphs
+                        "networth": existing_analysis.get("networth", []),
+                        "users": existing_analysis.get("users", []),
+                        "funding": existing_analysis.get("funding", [])
+                    }
+                    research_results.append(research_result)
+                    researched_count += 1
+                    
+                    # Send research complete event for this competitor
+                    yield f"data: {json.dumps({'type': 'competitor_research', 'result': research_result})}\n\n"
+                else:
+                    # No existing analysis, use OpenAI
+                    logger.info(f"No existing analysis for {competitor.get('name')}, using OpenAI")
+                    yield f"data: {json.dumps({'type': 'research_status', 'competitor_id': competitor_id, 'competitor_name': competitor.get('name'), 'status': 'analyzing'})}\n\n"
+                    
+                    # Build the research prompt
+                    research_prompt = """You are a business analyst with 20 years of experience. You can take any company's website url, and do research about it and figure out how their networth has changed since they have started their company, how their number of users have changed since they started the business and how much funding they have made since the start of their company.
 
 IMPORTANT: You must respond with ONLY valid JSON. Do not include any explanatory text, markdown formatting, or code blocks. Return only the raw JSON object.
 
@@ -352,50 +383,51 @@ Company URL: """ + competitor_url + """
 
 Remember: Output ONLY the JSON object, nothing else."""
 
-                # Call OpenAI service for research
-                response_text = openai_service.get_text_completion(
-                    research_prompt,
-                    model="gpt-4",
-                    temperature=0.7
-                )
-                
-                # Parse the research response
-                research_data = parse_research_response(response_text)
-                
-                # Save research data to database
-                if research_data and competitor_id:
-                    save_research_data(supabase_service, competitor_id, research_data)
-                    research_result = {
-                        "competitor_id": competitor_id,
-                        "competitor_name": competitor.get("name"),
-                        "status": "success",
-                        "networth_count": len(research_data.get("networth", [])),
-                        "users_count": len(research_data.get("users", [])),
-                        "funding_count": len(research_data.get("funding", [])),
-                        # Include actual data for graphs
-                        "networth": research_data.get("networth", []),
-                        "users": research_data.get("users", []),
-                        "funding": research_data.get("funding", [])
-                    }
-                    research_results.append(research_result)
-                    researched_count += 1
-                    logger.info(f"Successfully researched and saved data for {competitor.get('name')}")
+                    # Call OpenAI service for research
+                    response_text = openai_service.get_text_completion(
+                        research_prompt,
+                        model="gpt-4",
+                        temperature=0.7
+                    )
                     
-                    # Send research complete event for this competitor
-                    yield f"data: {json.dumps({'type': 'competitor_research', 'result': research_result})}\n\n"
-                else:
-                    research_result = {
-                        "competitor_id": competitor_id,
-                        "competitor_name": competitor.get("name"),
-                        "status": "failed",
-                        "error": "Could not parse research data"
-                    }
-                    research_results.append(research_result)
-                    researched_count += 1
-                    logger.warning(f"Could not parse research data for {competitor.get('name')}")
+                    # Parse the research response
+                    research_data = parse_research_response(response_text)
                     
-                    # Send research failed event
-                    yield f"data: {json.dumps({'type': 'competitor_research', 'result': research_result})}\n\n"
+                    # Save research data to database
+                    if research_data and competitor_id:
+                        save_research_data(supabase_service, competitor_id, research_data)
+                        research_result = {
+                            "competitor_id": competitor_id,
+                            "competitor_name": competitor.get("name"),
+                            "status": "success",
+                            "from_cache": False,  # Indicate this came from OpenAI
+                            "networth_count": len(research_data.get("networth", [])),
+                            "users_count": len(research_data.get("users", [])),
+                            "funding_count": len(research_data.get("funding", [])),
+                            # Include actual data for graphs
+                            "networth": research_data.get("networth", []),
+                            "users": research_data.get("users", []),
+                            "funding": research_data.get("funding", [])
+                        }
+                        research_results.append(research_result)
+                        researched_count += 1
+                        logger.info(f"Successfully researched and saved data for {competitor.get('name')}")
+                        
+                        # Send research complete event for this competitor
+                        yield f"data: {json.dumps({'type': 'competitor_research', 'result': research_result})}\n\n"
+                    else:
+                        research_result = {
+                            "competitor_id": competitor_id,
+                            "competitor_name": competitor.get("name"),
+                            "status": "failed",
+                            "error": "Could not parse research data"
+                        }
+                        research_results.append(research_result)
+                        researched_count += 1
+                        logger.warning(f"Could not parse research data for {competitor.get('name')}")
+                        
+                        # Send research failed event
+                        yield f"data: {json.dumps({'type': 'competitor_research', 'result': research_result})}\n\n"
                     
             except Exception as e:
                 logger.error(f"Error researching competitor {competitor.get('name')}: {str(e)}")
